@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
@@ -30,7 +31,21 @@ volatile char BTN_Y_FLAG = 0;
 volatile char BTN_B_FLAG = 0;
 volatile char BTN_G_FLAG = 0;
 volatile char BTN_R_FLAG = 0;
+
+
 volatile int start_flag = 0;
+volatile int sequence_flag = 0;
+
+
+int sequence[100];
+
+void build_array(int arr[100]) {
+    uint64_t start_us = to_us_since_boot(get_absolute_time());
+    srand(start_us);
+    for (int i = 0; i < 100; i++) {
+        arr[i] = rand() % 4;
+    }
+}
 
 void playtone(int freq, int duration) {
     int period = 1000000 / freq;
@@ -43,26 +58,46 @@ void playtone(int freq, int duration) {
     }
 }
 
+
+
 void start(void){
-    playtone(1000, 50);
+    gpio_put(LED_Y, 1);
+    playtone(1000, 100);
+    sleep_ms(50);
+    gpio_put(LED_Y, 0);
+    sleep_ms(50);
+    gpio_put(LED_B, 1);
+    playtone(1100, 100);
+    sleep_ms(50);
+    gpio_put(LED_B, 0);
+    sleep_ms(50);
+    gpio_put(LED_G, 1);
+    playtone(1200, 100);
+    sleep_ms(50);
+    gpio_put(LED_G, 0);
+    sleep_ms(50);
+    gpio_put(LED_R, 1);
+    playtone(1300, 100);
+    sleep_ms(50);
+    gpio_put(LED_R, 0);
     sleep_ms(50);
 }
 
 void btn_callback(uint gpio, uint32_t events) {
     if (gpio == ON_OFF){
         BTN_ON_OFF = !BTN_ON_OFF;
-
     }
-    if (gpio == BTN_Y) {
+    if (gpio == BTN_Y && start_flag) {
         BTN_Y_FLAG = 1;
-    } else if (gpio == BTN_B) {
+    } else if (gpio == BTN_B && start_flag) {
         BTN_B_FLAG = 1;
-    } else if (gpio == BTN_G) {
+    } else if (gpio == BTN_G && start_flag) {
         BTN_G_FLAG = 1;
-    } else if (gpio == BTN_R) {
+    } else if (gpio == BTN_R && start_flag) {
         BTN_R_FLAG = 1;
     }
 }
+
 
 
 int main() {
@@ -98,41 +133,68 @@ int main() {
     gpio_set_irq_enabled(BTN_R, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(ON_OFF, GPIO_IRQ_EDGE_FALL, true);
     while (true) {
-        printf("%d\n", BTN_ON_OFF);
+        
         if (BTN_ON_OFF){
-
+            if (!sequence_flag){
+            build_array(sequence);
+            printf("\n Sequence: ");
+            for (int i = 0; i < 100; i++) {
+                printf("%d ", sequence[i]);
+            }
+            sequence_flag = 1;
+            
+        }
+            if (!start_flag){
+                start();
+                start_flag = 1;
+                sleep_ms(100);
+            }
             if(BTN_Y_FLAG){
                 BTN_Y_FLAG = 0;
                 gpio_put(LED_Y, 1);
                 playtone(1000, 100);
-                sleep_ms(50);
-                
+                //sleep_ms(50);
                 gpio_put(LED_Y, 0);
             }
             if(BTN_B_FLAG){
                 BTN_B_FLAG = 0;
                 gpio_put(LED_B, 1);
                 playtone(1100, 100);
-                sleep_ms(50);
-                
+                //sleep_ms(50);
                 gpio_put(LED_B, 0);
             }
             if(BTN_G_FLAG){
                 BTN_G_FLAG = 0;
                 gpio_put(LED_G, 1);
                 playtone(1200, 100);
-                sleep_ms(50);
-                
+                //sleep_ms(50);
                 gpio_put(LED_G, 0);
             }
             if(BTN_R_FLAG){
                 BTN_R_FLAG = 0;
                 gpio_put(LED_R, 1);
                 playtone(1300, 100);
-                sleep_ms(50);
-                
+                //sleep_ms(50);
                 gpio_put(LED_R, 0);
             }
+        } else{
+            start_flag = 0;
+            sequence_flag = 0;
+
+            BTN_Y_FLAG = 0;
+            BTN_B_FLAG = 0;
+            BTN_G_FLAG = 0;
+            BTN_R_FLAG = 0;
+            gpio_put(LED_Y, 1);
+            gpio_put(LED_B, 1);
+            gpio_put(LED_G, 1);
+            gpio_put(LED_R, 1);
+            sleep_ms(1000);
+            gpio_put(LED_Y, 0);
+            gpio_put(LED_B, 0);
+            gpio_put(LED_G, 0);
+            gpio_put(LED_R, 0);
+            sleep_ms(100);
         }
     }
 }
