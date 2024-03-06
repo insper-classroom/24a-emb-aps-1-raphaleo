@@ -25,6 +25,21 @@ const int BTN_R = 17;
 
 const int BUZZER = 7;
 
+int display_pins[7] = {4, 5, 6, 8, 9, 10, 11};
+
+long chars[10][8] = {
+    {0, 1, 1, 1, 1, 1, 1, 1}, //0
+    {0, 0, 0, 1, 1, 0, 0, 0}, //1
+    {1, 0, 1, 1, 0, 1, 1, 1}, //2
+    {1, 0, 1, 1, 1, 1, 0, 1}, //3
+    {1, 1, 0, 1, 1, 0, 0, 1}, //4
+    {1, 1, 1, 0, 1, 1, 0, 1}, //5
+    {1, 1, 1, 0, 1, 1, 1, 1}, //6
+    {0, 0, 1, 1, 1, 0, 0, 0}, //7
+    {1, 1, 1, 1, 1, 1, 1, 1}, //8
+    {1, 1, 1, 1, 1, 1, 0, 1}  //9
+};
+
 
 volatile int BTN_ON_OFF = 0;
 volatile char BTN_Y_FLAG = 0;
@@ -35,6 +50,9 @@ volatile char BTN_R_FLAG = 0;
 
 volatile int start_flag = 0;
 volatile int sequence_flag = 0;
+volatile int stage = 0;
+volatile int sequence_index = 0;
+volatile int current_index = 0;
 
 
 int sequence[100];
@@ -58,7 +76,72 @@ void playtone(int freq, int duration) {
     }
 }
 
+void display(int num) {
+    for (int i = 0; i < 8; i++) {
+        int state = chars[num][i];
+        gpio_put(display_pins[i], state);
+    }
+}
 
+void game_over(){
+    gpio_put(LED_Y, 1);
+    gpio_put(LED_B, 1);
+    gpio_put(LED_G, 1);
+    gpio_put(LED_R, 1);
+    playtone(1000, 100);
+    sleep_ms(50);
+    gpio_put(LED_Y, 0);
+    gpio_put(LED_B, 0);
+    gpio_put(LED_G, 0);
+    gpio_put(LED_R, 0);
+    sleep_ms(50);
+    playtone(1100, 100);
+    gpio_put(LED_Y, 1);
+    gpio_put(LED_B, 1);
+    gpio_put(LED_G, 1);
+    gpio_put(LED_R, 1);
+    sleep_ms(50);
+    gpio_put(LED_Y, 0);
+    gpio_put(LED_B, 0);
+    gpio_put(LED_G, 0);
+    gpio_put(LED_R, 0);
+    sleep_ms(50);
+    playtone(1200, 100);
+    gpio_put(LED_Y, 1);
+    gpio_put(LED_B, 1);
+    gpio_put(LED_G, 1);
+    gpio_put(LED_R, 1);
+    sleep_ms(50);
+    gpio_put(LED_Y, 0);
+    gpio_put(LED_B, 0);
+    gpio_put(LED_G, 0);
+    gpio_put(LED_R, 0);
+    sleep_ms(50);
+    playtone(1300, 100);
+    gpio_put(LED_Y, 1);
+    gpio_put(LED_B, 1);
+    gpio_put(LED_G, 1);
+    gpio_put(LED_R, 1);
+    sleep_ms(50);
+    gpio_put(LED_Y, 0);
+    gpio_put(LED_B, 0);
+    gpio_put(LED_G, 0);
+    gpio_put(LED_R, 0);
+    sleep_ms(50);
+    stage = 0;
+    sequence_index = 0;
+    current_index = 0;
+    start_flag = 0;
+    sequence_flag = 0;
+    BTN_Y_FLAG = 0;
+    BTN_B_FLAG = 0;
+    BTN_G_FLAG = 0;
+    BTN_R_FLAG = 0;
+    BTN_ON_OFF = 0;
+    sleep_ms(1000);
+
+
+}
 
 void start(void){
     gpio_put(LED_Y, 1);
@@ -81,7 +164,11 @@ void start(void){
     sleep_ms(50);
     gpio_put(LED_R, 0);
     sleep_ms(50);
+    stage = 1;
+    
 }
+
+
 
 void btn_callback(uint gpio, uint32_t events) {
     if (gpio == ON_OFF){
@@ -102,6 +189,15 @@ void btn_callback(uint gpio, uint32_t events) {
 
 int main() {
     stdio_init_all();
+
+
+
+    for (int i = 0; i < 8; i++) {
+        gpio_init(display_pins[i]);
+        gpio_set_dir(display_pins[i], GPIO_OUT);
+
+    }
+
     gpio_init(BUZZER);
     gpio_set_dir(BUZZER, GPIO_OUT);
     gpio_init(LED_Y);
@@ -132,7 +228,12 @@ int main() {
     gpio_set_irq_enabled(BTN_G, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(BTN_R, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(ON_OFF, GPIO_IRQ_EDGE_FALL, true);
+
+
+
     while (true) {
+
+        display(5);
         
         if (BTN_ON_OFF){
             if (!sequence_flag){
@@ -143,43 +244,122 @@ int main() {
             }
             sequence_flag = 1;
             
-        }
+            }
             if (!start_flag){
                 start();
                 start_flag = 1;
+                sleep_ms(500);
+                stage = 1;
+            } 
+            if (stage == 1){
+                for (int i = 0; i < sequence_index; i++) {
+                    if (sequence[i] == 0) {
+                        gpio_put(LED_Y, 1);
+                        playtone(1000, 100);
+                        gpio_put(LED_Y, 0);
+                        sleep_ms(150);
+                    } else if (sequence[i] == 1) {
+                        gpio_put(LED_B, 1);
+                        playtone(1100, 100);
+                        gpio_put(LED_B, 0);
+                        sleep_ms(150);
+                    } else if (sequence[i] == 2) {
+                        gpio_put(LED_G, 1);
+                        playtone(1200, 100);
+                        gpio_put(LED_G, 0);
+                        sleep_ms(150);
+                    } else if (sequence[i] == 3) {
+                        gpio_put(LED_R, 1);
+                        playtone(1300, 100);
+                        gpio_put(LED_R, 0);
+                        sleep_ms(150);
+                    }
+                    sleep_ms(100);
+                }
                 sleep_ms(100);
+                stage = 2;
+                
             }
-            if(BTN_Y_FLAG){
+            else if(stage == 2){
+                if(BTN_Y_FLAG){
+                    if (sequence[current_index] == 0) {
+                        gpio_put(LED_Y, 1);
+                        playtone(1000, 100);
+                        gpio_put(LED_Y, 0);
+                        sleep_ms(200);
+                        current_index++;
+                    } else {
+                        game_over();
+                        stage = 0;
+                    }
+                    BTN_Y_FLAG = 0;
+                }
+                if(BTN_B_FLAG){
+                    if (sequence[current_index] == 1) {
+                        gpio_put(LED_B, 1);
+                        playtone(1100, 100);
+                        gpio_put(LED_B, 0);
+                        sleep_ms(200);
+                        current_index++;
+                    } else {
+                        game_over();
+                        stage = 0;
+                    }
+                    BTN_B_FLAG = 0;
+                }
+                if(BTN_G_FLAG){
+                    if (sequence[current_index] == 2) {
+                        gpio_put(LED_G, 1);
+                        playtone(1200, 100);
+                        gpio_put(LED_G, 0);
+                        sleep_ms(200);
+                        current_index++;
+                    } else {
+                        game_over();
+                        stage = 0;
+                    }
+                    BTN_G_FLAG = 0;
+                }
+                if(BTN_R_FLAG){
+                    if (sequence[current_index] == 3) {
+                        gpio_put(LED_R, 1);
+                        playtone(1300, 100);
+                        gpio_put(LED_R, 0);
+                        sleep_ms(200);
+                        current_index++;
+                    } else {
+                        game_over();
+                        stage = 0;
+                    }
+                    BTN_R_FLAG = 0;
+                }
+                if (current_index == sequence_index){
+                    stage = 1;
+                    sequence_index++;
+                    current_index = 0;
+                    sleep_ms(1000);
+                }
+            }else{
+                start_flag = 0;
+                sequence_flag = 0;
+                stage = 0;
+                sequence_index = 0;
+                current_index = 0;
+
+
                 BTN_Y_FLAG = 0;
-                gpio_put(LED_Y, 1);
-                playtone(1000, 100);
-                //sleep_ms(50);
-                gpio_put(LED_Y, 0);
-            }
-            if(BTN_B_FLAG){
                 BTN_B_FLAG = 0;
-                gpio_put(LED_B, 1);
-                playtone(1100, 100);
-                //sleep_ms(50);
-                gpio_put(LED_B, 0);
-            }
-            if(BTN_G_FLAG){
                 BTN_G_FLAG = 0;
-                gpio_put(LED_G, 1);
-                playtone(1200, 100);
-                //sleep_ms(50);
-                gpio_put(LED_G, 0);
-            }
-            if(BTN_R_FLAG){
                 BTN_R_FLAG = 0;
-                gpio_put(LED_R, 1);
-                playtone(1300, 100);
-                //sleep_ms(50);
-                gpio_put(LED_R, 0);
+                BTN_ON_OFF = 0;
             }
         } else{
             start_flag = 0;
             sequence_flag = 0;
+            stage = 0;
+            sequence_index = 0;
+            current_index = 0;
+
 
             BTN_Y_FLAG = 0;
             BTN_B_FLAG = 0;
