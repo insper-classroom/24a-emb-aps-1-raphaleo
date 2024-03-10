@@ -1,4 +1,5 @@
 
+// Remove conflicting language mode specification
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
