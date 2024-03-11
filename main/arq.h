@@ -1,5 +1,8 @@
+#ifndef ARQ_H
+#define ARQ_H
 #include <stdlib.h>
 #include <stdio.h>
+
 
 extern int ON_OFF;
 extern int LED_Y;
@@ -40,5 +43,5 @@ void game_over();
 void start(void);
 void btn_callback(uint gpio, uint32_t events);
 
-
+#endif 
 
