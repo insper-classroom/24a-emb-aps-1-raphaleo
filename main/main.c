@@ -12,8 +12,6 @@
 #define UART_ID uart0
 #define BAUD_RATE 9600
 
-#define UART_TX_PIN 0
-#define UART_RX_PIN 1
 
 const int ON_OFF = 28;
 
@@ -36,9 +34,9 @@ const int VIBRA_R = 19;
 const int BUZZER = 7;
 
 const int BTN_DIFF = 20;
-const int LED_DIFF_G = 21;
-const int LED_DIFF_Y = 22;
-const int LED_DIFF_R = 23;
+const int LED_DIFF_G = 22;
+const int LED_DIFF_Y = 21;
+const int LED_DIFF_R = 6;
 
 
 
@@ -201,22 +199,12 @@ void btn_callback(uint gpio, uint32_t events) {
 
 int main() {
     stdio_init_all();
-    uart_init(UART_ID, BAUD_RATE);
-
-    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
 
     //sending data
-    uart_putc(UART_ID, " Hello, UART!\n");
+    
 
     //receiving data
     //waiting to receive data
-    while (!uart_is_readable(UART_ID)) {
-        tight_loop_contents();
-    }   
-    char c = uart_getc(UART_ID);
-    printf("Received: %c\n", c);
-
 
 
 //    for (int i = 0; i < 8; i++) {
@@ -271,18 +259,30 @@ int main() {
     gpio_pull_up(BTN_G);
     gpio_pull_up(BTN_R);
     gpio_pull_up(ON_OFF);
+    gpio_pull_up(BTN_DIFF);
     gpio_set_irq_enabled_with_callback(BTN_Y, GPIO_IRQ_EDGE_FALL, true, &btn_callback);
     gpio_set_irq_enabled(BTN_B, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(BTN_G, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(BTN_R, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(ON_OFF, GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled(BTN_DIFF, GPIO_IRQ_EDGE_FALL, true);
+
+    
 
 
 
     while (true) {
+        //sent an 8bit number
+        printf("%d\n", 2);
+        if (uart_is_writable(UART_ID)){
+            printf("Data sent: %d\n", 2);
+            uart_putc_raw(UART_ID, (char) 2);
+        }
 
 //        display(points);
-        display_diff(diff);
+        display_diff(BTN_DIFF_FLAG);
+        printf("dificuldade: %d\n", diff);
+
         if (BTN_ON_OFF){
             if (!sequence_flag){
             build_array(sequence);
@@ -294,8 +294,8 @@ int main() {
             
             }
             if (!start_flag){
-                start();
                 set_diff(BTN_DIFF_FLAG);
+                start();
                 start_flag = 1;
                 sleep_ms(500);
                 stage = 1;
@@ -346,7 +346,7 @@ int main() {
                         gpio_put(LED_Y, 0);
                         gpio_put(VIBRA_Y, 0);
                         sleep_ms(200);
-                        current_index+=1+diff;
+                        current_index+=1;
                     } else {
                         game_over();
                         points = 0;
@@ -362,7 +362,7 @@ int main() {
                         gpio_put(LED_B, 0);
                         gpio_put(VIBRA_B, 0);
                         sleep_ms(200);
-                        current_index+=1+diff;;
+                        current_index+=1;
                     } else {
                         game_over();
                         points = 0;
@@ -378,7 +378,7 @@ int main() {
                         gpio_put(LED_G, 0);
                         gpio_put(VIBRA_G, 0);
                         sleep_ms(200);
-                        current_index+=1+diff;;
+                        current_index+=1;
                     } else {
                         game_over();
                         points = 0;
@@ -394,7 +394,7 @@ int main() {
                         gpio_put(LED_R, 0);
                         gpio_put(VIBRA_R, 0);
                         sleep_ms(200);
-                        current_index+=1+diff;;
+                        current_index+=1;
                     } else {
                         game_over();
                         points = 0;
@@ -404,7 +404,7 @@ int main() {
                 }
                 if (current_index == sequence_index){
                     stage = 1;
-                    sequence_index++;
+                    sequence_index+=1+diff;
                     points++;
                     current_index = 0;
                     note_delay*=0.1*points+0.5*diff;
