@@ -8,40 +8,38 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
+#include "arq.h"
+
 
 #define UART_ID uart0
 #define BAUD_RATE 9600
+int ON_OFF = 28;
 
+int LED_Y = 14;
+int BTN_Y = 15;
+int VIBRA_Y = 16;
 
-const int ON_OFF = 28;
+int LED_B = 2;
+int BTN_B = 3;
+int VIBRA_B = 4;
 
-const int LED_Y = 14;
-const int BTN_Y = 15;
-const int VIBRA_Y = 16;
+int LED_G = 26;
+int BTN_G = 27;
+int VIBRA_G = 5;
 
-const int LED_B = 2;
-const int BTN_B = 3;
-const int VIBRA_B = 4;
+int LED_R = 17;
+int BTN_R = 18;
+int VIBRA_R = 19;
 
-const int LED_G = 26;
-const int BTN_G = 27;
-const int VIBRA_G = 5;
+int BUZZER = 7;
 
-const int LED_R = 17;
-const int BTN_R = 18;
-const int VIBRA_R = 19;
-
-const int BUZZER = 7;
-
-const int BTN_DIFF = 20;
-const int LED_DIFF_G = 22;
-const int LED_DIFF_Y = 21;
-const int LED_DIFF_R = 6;
-
+int BTN_DIFF = 20;
+int LED_DIFF_G = 22;
+int LED_DIFF_Y = 21;
+int LED_DIFF_R = 6;
 
 
 
-int note_delay = 150;
 
 //int display_pins[7] = {4, 5, 6, 8, 9, 10, 11};
 //
@@ -72,133 +70,19 @@ volatile int sequence_flag = 0;
 volatile int stage = 0;
 volatile int sequence_index = 0;
 volatile int current_index = 0;
+volatile int diff = 0;
 
 
 
-
-int sequence[100];
-
-int diff = 0;
-int points = -1;
-
-
-void build_array(int arr[100]) {
-    uint64_t start_us = to_us_since_boot(get_absolute_time());
-    srand(start_us);
-    for (int i = 0; i < 100; i++) {
-        arr[i] = rand() % 4;
-    }
-}
-
-void display_diff(int diff){
-    if (diff == 0){
-        gpio_put(LED_DIFF_Y, 1);
-        gpio_put(LED_DIFF_G, 0);
-        gpio_put(LED_DIFF_R, 0);
-    } else if (diff == 1){
-        gpio_put(LED_DIFF_Y, 1);
-        gpio_put(LED_DIFF_G, 1);
-        gpio_put(LED_DIFF_R, 0);
-    } else if (diff == 2){
-        gpio_put(LED_DIFF_Y, 1);
-        gpio_put(LED_DIFF_G, 1);
-        gpio_put(LED_DIFF_R, 1);
-    }
-}
-
-void set_diff(int flag){
-    diff = flag;
-}
-
-void playtone(int freq, int duration) {
-    int period = 1000000 / freq;
-    int cycles = duration * freq / 1000;
-    for (int i = 0; i < cycles; i++) {
-        gpio_put(BUZZER, 1);
-        sleep_us(period / 2);
-        gpio_put(BUZZER, 0);
-        sleep_us(period / 2);
-    }
-}
-
-//void display(int num) {
-//    if (num<0){
-//        num = 0;
-//    }
-//    for (int i = 0; i < 8; i++) {
-//        int state = chars[num][i];
-//        gpio_put(display_pins[i], state);
-//    }
-//}
-
-void game_over(){
-    for (int i = 4; i > 0; i--) {
-        gpio_put(LED_Y, 1);
-        gpio_put(LED_B, 1);
-        gpio_put(LED_G, 1);
-        gpio_put(LED_R, 1);
-        playtone(1000+100*i, 100);
-        gpio_put(LED_Y, 0);
-        gpio_put(LED_B, 0);
-        gpio_put(LED_G, 0);
-        gpio_put(LED_R, 0);
-        sleep_ms(100);
-    }
-
-
-}
-
-void start(void){
-    gpio_put(LED_Y, 1);
-    playtone(1000, 100);
-    sleep_ms(50);
-    gpio_put(LED_Y, 0);
-    sleep_ms(50);
-    gpio_put(LED_B, 1);
-    playtone(1100, 100);
-    sleep_ms(50);
-    gpio_put(LED_B, 0);
-    sleep_ms(50);
-    gpio_put(LED_G, 1);
-    playtone(1200, 100);
-    sleep_ms(50);
-    gpio_put(LED_G, 0);
-    sleep_ms(50);
-    gpio_put(LED_R, 1);
-    playtone(1300, 100);
-    sleep_ms(50);
-    gpio_put(LED_R, 0);
-    sleep_ms(50);
-    stage = 1;
-    
-}
-
-
-
-void btn_callback(uint gpio, uint32_t events) {
-    if (gpio == ON_OFF){
-        BTN_ON_OFF = !BTN_ON_OFF;
-    }
-    if (gpio == BTN_Y && start_flag) {
-        BTN_Y_FLAG = 1;
-    } else if (gpio == BTN_B && start_flag) {
-        BTN_B_FLAG = 1;
-    } else if (gpio == BTN_G && start_flag) {
-        BTN_G_FLAG = 1;
-    } else if (gpio == BTN_R && start_flag) {
-        BTN_R_FLAG = 1;
-    } else if (gpio == BTN_DIFF) {
-        BTN_DIFF_FLAG += 1;
-        if (BTN_DIFF_FLAG == 3){
-            BTN_DIFF_FLAG = 0;
-        }
-    }
-}
 
 
 
 int main() {
     stdio_init_all();
+    int note_delay = 150;
+    int sequence[100];
+    
+    int points = -1;
 
     //sending data
     
